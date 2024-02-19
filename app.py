@@ -54,7 +54,7 @@ def upload_file():
                             --image_folder {UPLOAD_FOLDER}/ --saved_model {model_path}').read()
 
         # Delete the uploaded file after processing
-        os.remove(file_path)
+        #os.remove(file_path)
 
         # Return only the recognized text without the headers
         return jsonify({'recognized_text': extract_predicted_labels(result)})
