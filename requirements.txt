@@ -1,9 +1,6 @@
 Flask
-gdown
-Werkzeug
-torch
-torchvision
-Pillow
-numpy
-opencv-python-headless
-lmdb
+gdown  # Needed if you're downloading models from Google Drive.
+torch  # Essential for your deep learning model.
+torchvision  # Usually required alongside PyTorch for image transformations.
+Pillow  # Important for image processing, used by torchvision.
+numpy  # Likely used in your model or data processing.
