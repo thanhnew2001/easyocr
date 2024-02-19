@@ -74,9 +74,5 @@ def extract_predicted_labels(recognized_text):
             predicted_labels.append(match.group(1))
     return predicted_labels
 
-# Extracting predicted labels
-labels = extract_predicted_labels(data['recognized_text'])
-print(labels)
-
 if __name__ == '__main__':
     app.run(debug=True)
