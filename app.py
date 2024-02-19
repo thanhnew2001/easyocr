@@ -43,36 +43,38 @@ def upload_file():
         file.save(file_path)
 
         # Assuming the language code is part of the form data
-        language_code = request.form.get('language', 'eng')  # Default to English if not provided
+        language_code = request.form.get('language', 'en')  # Default to English if not provided
 
         # Here you can add conditions to select the model based on language_code
-        # For simplicity, we use one model for demonstration
         model_path = os.path.join(MODEL_FOLDER, "TPS-ResNet-BiLSTM-Attn.pth")
 
-        # Run the model
+        # Run the model and extract results
         result = os.popen(f'CUDA_VISIBLE_DEVICES=0 python3 {MODEL_FOLDER}/demo.py \
                             --Transformation TPS --FeatureExtraction ResNet --SequenceModeling BiLSTM --Prediction Attn \
                             --image_folder {UPLOAD_FOLDER}/ --saved_model {model_path}').read()
 
-        # Here, you should parse the output of the model to extract the recognized text
-        # For simplicity, we just return the raw result
+        # Delete the uploaded file after processing
+        os.remove(file_path)
+
+        # Return only the recognized text without the headers
         return jsonify({'recognized_text': extract_predicted_labels(result)})
 
-# Function to extract predicted labels from the recognized text
+# Function to extract predicted labels from the recognized text, excluding header line
 def extract_predicted_labels(recognized_text):
-    # Split the text by lines
-    lines = recognized_text.split('\n')
+    # Split the text by lines after the header
+    lines = recognized_text.split('\n')[7:]  # Adjust the index to skip header lines
     # Initialize an empty list to hold the predicted labels
     predicted_labels = []
-    # Regex pattern to match lines with predicted labels
-    pattern = re.compile(r'\t([^\t]+)\t')
-    # Start processing lines after the header part
+    # Process each line for predicted labels
     for line in lines:
-        # Check if the line contains predicted label information
-        match = pattern.search(line)
-        if match:
-            # Add the extracted label to the list
-            predicted_labels.append(match.group(1))
+        if line.strip():  # Check if the line is not empty
+            # Extracting only the part after 'uploads/' and before the first tab for filename
+            # and the part between the first and second tab for predicted label
+            parts = line.split('\t')
+            if len(parts) >= 2:  # Check if line contains enough parts
+                filename = parts[0].strip().split('/')[-1]  # Get only the file name
+                predicted_label = parts[1].strip()
+                predicted_labels.append((filename, predicted_label))
     return predicted_labels
 
 if __name__ == '__main__':
