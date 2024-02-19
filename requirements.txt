@@ -1,9 +1,9 @@
-Flask==2.0.2
-gdown==4.4.0
-Werkzeug==2.0.2
-torch==1.12.0
-torchvision==0.12.0  # Updated to a compatible version based on the error message
-Pillow==8.4.0
-numpy==1.21.4
-opencv-python-headless==4.5.4.60
-lmdb==1.2.1
+Flask
+gdown
+Werkzeug
+torch
+torchvision
+Pillow
+numpy
+opencv-python-headless
+lmdb
