@@ -74,7 +74,7 @@ def extract_predicted_labels(recognized_text):
         if match:
             # Add the extracted label to the list
             predicted_labels.append(match.group(1))
-    return predicted_labels[1]
+    return predicted_labels[1].strip()
 
 
 if __name__ == '__main__':
