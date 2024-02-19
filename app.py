@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 import os
-from werkzeug.utils import secure_filename
 import re
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
@@ -10,22 +10,25 @@ UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Function to extract image file names and their corresponding predicted labels
-def extract_image_labels(recognized_text):
-    # Initialize an empty list to hold the image file names and predicted labels
-    image_labels = []
-    # Regex pattern to extract file name and predicted label
-    pattern = re.compile(r'(uploads\/[^\t]+)\t([^\t]+)')
-    # Process each line
-    for line in recognized_text.split('\n'):
-        # Find matches using the regular expression
-        matches = pattern.search(line)
-        if matches:
-            # Extract the image file name and predicted label
-            image_file, predicted_label = matches.groups()
-            # Add the pair to the list
-            image_labels.append((image_file, predicted_label))
-    return image_labels
+# Define the path for models
+MODEL_FOLDER = 'deep-text-recognition-benchmark'
+os.makedirs(MODEL_FOLDER, exist_ok=True)
+
+# Define the models
+models = {
+    'None-ResNet-None-CTC.pth': 'https://drive.google.com/uc?id=1FocnxQzFBIjDT2F9BkNUiLdo1cC3eaO0',
+    'None-VGG-BiLSTM-CTC.pth': 'https://drive.google.com/uc?id=1GGC2IRYEMQviZhqQpbtpeTgHO_IXWetG',
+    'None-VGG-None-CTC.pth': 'https://drive.google.com/uc?id=1FS3aZevvLiGF1PFBm5SkwvVcgI6hJWL9',
+    'TPS-ResNet-BiLSTM-Attn-case-sensitive.pth': 'https://drive.google.com/uc?id=1ajONZOgiG9pEYsQ-eBmgkVbMDuHgPCaY',
+    'TPS-ResNet-BiLSTM-Attn.pth': 'https://drive.google.com/uc?id=1b59rXuGGmKne1AuHnkgDzoYgKeETNMv9',
+    'TPS-ResNet-BiLSTM-CTC.pth': 'https://drive.google.com/uc?id=1FocnxQzFBIjDT2F9BkNUiLdo1cC3eaO0',
+}
+
+# Download models if they don't already exist
+for k, v in models.items():
+    model_path = os.path.join(MODEL_FOLDER, k)
+    if not os.path.exists(model_path):
+        os.system(f'gdown -O {model_path} "{v}"')
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -39,18 +42,38 @@ def upload_file():
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
 
-        # Run your model here and get the recognized text
-        # For example purposes, let's assume the recognized_text is returned from your model
-        # recognized_text = your_model_function(file_path)  # Replace with actual model function call
-        recognized_text = "Your recognized text here"  # Placeholder for actual recognized text
+        # Assuming the language code is part of the form data
+        language_code = request.form.get('language', 'eng')  # Default to English if not provided
 
-        # Extracting image file names and predicted labels
-        image_labels = extract_image_labels(recognized_text)
-        
-        # After processing, delete the uploaded file to clean up
-        os.remove(file_path)
-        
-        return jsonify({'image_labels': image_labels})
+        # Here you can add conditions to select the model based on language_code
+        # For simplicity, we use one model for demonstration
+        model_path = os.path.join(MODEL_FOLDER, "TPS-ResNet-BiLSTM-Attn.pth")
+
+        # Run the model
+        result = os.popen(f'CUDA_VISIBLE_DEVICES=0 python3 {MODEL_FOLDER}/demo.py \
+                            --Transformation TPS --FeatureExtraction ResNet --SequenceModeling BiLSTM --Prediction Attn \
+                            --image_folder {UPLOAD_FOLDER}/ --saved_model {model_path}').read()
+
+        # Here, you should parse the output of the model to extract the recognized text
+        # For simplicity, we just return the raw result
+        return jsonify({'recognized_text': extract_predicted_labels(result)})
+
+# Function to extract predicted labels from the recognized text
+def extract_predicted_labels(recognized_text):
+    # Split the text by lines
+    lines = recognized_text.split('\n')
+    # Initialize an empty list to hold the predicted labels
+    predicted_labels = []
+    # Regex pattern to match lines with predicted labels
+    pattern = re.compile(r'\t([^\t]+)\t')
+    # Start processing lines after the header part
+    for line in lines:
+        # Check if the line contains predicted label information
+        match = pattern.search(line)
+        if match:
+            # Add the extracted label to the list
+            predicted_labels.append(match.group(1))
+    return predicted_labels
 
 if __name__ == '__main__':
     app.run(debug=True)
