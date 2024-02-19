@@ -9,6 +9,10 @@ UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+# Define the path for models
+MODEL_FOLDER = 'deep-text-recognition-benchmark'
+os.makedirs(MODEL_FOLDER, exist_ok=True)
+
 # Define the models
 models = {
     'None-ResNet-None-CTC.pth': 'https://drive.google.com/uc?id=1FocnxQzFBIjDT2F9BkNUiLdo1cC3eaO0',
@@ -19,9 +23,11 @@ models = {
     'TPS-ResNet-BiLSTM-CTC.pth': 'https://drive.google.com/uc?id=1FocnxQzFBIjDT2F9BkNUiLdo1cC3eaO0',
 }
 
-# Download models
+# Download models if they don't already exist
 for k, v in models.items():
-    os.system(f'gdown -O {os.path.join("deep-text-recognition-benchmark", k)} "{v}"')
+    model_path = os.path.join(MODEL_FOLDER, k)
+    if not os.path.exists(model_path):
+        os.system(f'gdown -O {model_path} "{v}"')
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -40,10 +46,10 @@ def upload_file():
 
         # Here you can add conditions to select the model based on language_code
         # For simplicity, we use one model for demonstration
-        model_path = os.path.join("deep-text-recognition-benchmark", "TPS-ResNet-BiLSTM-Attn.pth")
+        model_path = os.path.join(MODEL_FOLDER, "TPS-ResNet-BiLSTM-Attn.pth")
 
         # Run the model
-        result = os.popen(f'CUDA_VISIBLE_DEVICES=0 python3 deep-text-recognition-benchmark/demo.py \
+        result = os.popen(f'CUDA_VISIBLE_DEVICES=0 python3 {MODEL_FOLDER}/demo.py \
                             --Transformation TPS --FeatureExtraction ResNet --SequenceModeling BiLSTM --Prediction Attn \
                             --image_folder {UPLOAD_FOLDER}/ --saved_model {model_path}').read()
 
