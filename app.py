@@ -55,7 +55,28 @@ def upload_file():
 
         # Here, you should parse the output of the model to extract the recognized text
         # For simplicity, we just return the raw result
-        return jsonify({'recognized_text': result})
+        return jsonify({'recognized_text': extract_predicted_labels(result)})
+
+# Function to extract predicted labels from the recognized text
+def extract_predicted_labels(recognized_text):
+    # Split the text by lines
+    lines = recognized_text.split('\n')
+    # Initialize an empty list to hold the predicted labels
+    predicted_labels = []
+    # Regex pattern to match lines with predicted labels
+    pattern = re.compile(r'\t([^\t]+)\t')
+    # Start processing lines after the header part
+    for line in lines:
+        # Check if the line contains predicted label information
+        match = pattern.search(line)
+        if match:
+            # Add the extracted label to the list
+            predicted_labels.append(match.group(1))
+    return predicted_labels
+
+# Extracting predicted labels
+labels = extract_predicted_labels(data['recognized_text'])
+print(labels)
 
 if __name__ == '__main__':
     app.run(debug=True)
