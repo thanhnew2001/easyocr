@@ -56,7 +56,7 @@ def upload_file():
 
         # Here, you should parse the output of the model to extract the recognized text
         # For simplicity, we just return the raw result
-        os.remove(filepath)
+        os.remove(file_path)
         return jsonify({'recognized_text': extract_predicted_labels(result)})
 
 # Function to extract predicted labels from the recognized text
